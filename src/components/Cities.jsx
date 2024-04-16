@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 
 import MUIDataTable from "mui-datatables";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-
+import Loader from './Loader';
 
 const Cities = () => {
 
     const [cities, setCities] = useState([]);
+    const [page, setPage]= useState(20);
+    const [loading, setLoading]= useState(true);
 
     const columns = [
         {
@@ -46,18 +48,19 @@ const Cities = () => {
         viewColumns: false,
     };
 
+    // getting cities
     useEffect(() => {
 
         const fetchData = async () => {
-            const res = await fetch("https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/geonames-all-cities-with-a-population-1000/records?limit=20")
+            const res = await fetch(`https://public.opendatasoft.com/api/explore/v2.1/catalog/datasets/geonames-all-cities-with-a-population-1000/records?limit=${page}`)
 
             const data = await res.json();
             setCities(data);
-            // console.log(data.results);
+            setLoading(false);
         }
 
         fetchData();
-    }, [])
+    }, [page])
 
     const getMuiTheme = () => createTheme({
         typography: {
@@ -86,6 +89,20 @@ const Cities = () => {
         }
     })
 
+    // infinite scroll
+    const handleScroll= () => {
+        if(window.innerHeight + document.documentElement.scrollTop + 1 >= document.documentElement.scrollHeight) {
+            setLoading(true);
+            setPage(prev => prev + 10);
+        }
+    }
+
+    useEffect(() => {
+        window.addEventListener("scroll", handleScroll)
+
+        return () => window.removeEventListener("scroll", handleScroll);
+    }, [])
+
     return (
         <div className='w-10/12'>
             <ThemeProvider theme={getMuiTheme()}>
@@ -96,6 +113,7 @@ const Cities = () => {
                     options={options}
                 />
             </ThemeProvider>
+            {loading && <Loader/>}
         </div>
     )
 }
